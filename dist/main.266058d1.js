@@ -11252,8 +11252,62 @@ if ( typeof noGlobal === "undefined" ) {
 return jQuery;
 } );
 
-},{"process":"C:\\Users\\kakms\\AppData\\Local\\Yarn\\Data\\global\\node_modules\\process\\browser.js"}],"app1.js":[function(require,module,exports) {
+},{"process":"C:\\Users\\kakms\\AppData\\Local\\Yarn\\Data\\global\\node_modules\\process\\browser.js"}],"base\\Model.js":[function(require,module,exports) {
+'use strict';
+
+Object.defineProperty(exports, "__esModule", {
+    value: true
+});
+
+var _createClass = function () { function defineProperties(target, props) { for (var i = 0; i < props.length; i++) { var descriptor = props[i]; descriptor.enumerable = descriptor.enumerable || false; descriptor.configurable = true; if ("value" in descriptor) descriptor.writable = true; Object.defineProperty(target, descriptor.key, descriptor); } } return function (Constructor, protoProps, staticProps) { if (protoProps) defineProperties(Constructor.prototype, protoProps); if (staticProps) defineProperties(Constructor, staticProps); return Constructor; }; }();
+
+function _classCallCheck(instance, Constructor) { if (!(instance instanceof Constructor)) { throw new TypeError("Cannot call a class as a function"); } }
+
+var Model = function () {
+    function Model(options) {
+        var _this = this;
+
+        _classCallCheck(this, Model);
+
+        ['data', 'create', 'delete', 'update', 'get'].forEach(function (key) {
+            if (key in options) {
+                _this[key] = options[key];
+            }
+        });
+    }
+
+    _createClass(Model, [{
+        key: 'create',
+        value: function create() {
+            console && console.error && console.error('你还没有实现 create()');
+        }
+    }, {
+        key: 'delete',
+        value: function _delete() {
+            console && console.error && console.error('你还没有实现 delete()');
+        }
+    }, {
+        key: 'update',
+        value: function update() {
+            console && console.error && console.error('你还没有实现 update()');
+        }
+    }, {
+        key: 'get',
+        value: function get() {
+            console && console.error && console.error('你还没有实现 get()');
+        }
+    }]);
+
+    return Model;
+}();
+
+exports.default = Model;
+},{}],"app1.js":[function(require,module,exports) {
 "use strict";
+
+Object.defineProperty(exports, "__esModule", {
+    value: true
+});
 
 require("./app1.css");
 
@@ -11261,44 +11315,80 @@ var _jquery = require("jquery");
 
 var _jquery2 = _interopRequireDefault(_jquery);
 
+var _Model = require("./base/Model.js");
+
+var _Model2 = _interopRequireDefault(_Model);
+
 function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
 
-var $button1 = (0, _jquery2.default)("#add1");
-var $button2 = (0, _jquery2.default)("#minus1");
-var $button3 = (0, _jquery2.default)("#mul2");
-var $button4 = (0, _jquery2.default)("#divide2");
-var $number = (0, _jquery2.default)("#number");
-var n = localStorage.getItem("n");
-$number.text(n || 100);
+// 创建一个空对象的 jquery
+var eventBus = (0, _jquery2.default)({});
 
-$button1.on("click", function () {
-  var n = parseInt($number.text());
-  n += 1;
-  localStorage.setItem("n", n);
-  $number.text(n);
+// 所有跟数据相关的，都放到 M
+var m = new _Model2.default({
+    data: {
+        n: parseInt(localStorage.getItem("n"))
+    },
+    update: function update(data) {
+        Object.assign(m.data, data);
+        eventBus.trigger('m:updated');
+        localStorage.setItem('n', data.n);
+    }
 });
 
-$button2.on("click", function () {
-  var n = parseInt($number.text());
-  n -= 1;
-  localStorage.setItem("n", n);
-  $number.text(n);
-});
+// 所有跟视图相关的，都放到 V
+// 其他所有，都放到 C
+var view = {
+    el: null,
+    html: "\n      <div>\n        <div class=\"output\">\n          <span id=\"number\">{{n}}</span>\n        </div>\n        <div class=\"actions\">\n          <button id=\"add1\">+1</button>\n          <button id=\"minus1\">-1</button>\n          <button id=\"mul2\">\xD72</button>\n          <button id=\"divide2\">\xF72</button>\n        </div>\n      </div>",
+    init: function init(container) {
+        view.el = (0, _jquery2.default)(container);
+        view.render(m.data.n); // view = render(data)
+        view.autoBindEvents();
+        eventBus.on('m:updated', function () {
+            view.render(m.data.n);
+        });
+    },
+    render: function render(n) {
+        if (view.el.children.length !== 0) {
+            view.el.empty();
+        }
+        (0, _jquery2.default)(view.html.replace('{{n}}', n)).appendTo(view.el);
+    },
 
-$button3.on("click", function () {
-  var n = parseInt($number.text());
-  n *= 2;
-  localStorage.setItem("n", n);
-  $number.text(n);
-});
+    events: {
+        'click #add1': 'add',
+        'click #minus1': 'minus',
+        'click #mul2': 'mul',
+        'click #divide2': 'div'
+    },
+    add: function add() {
+        m.update({ n: m.data.n + 1 });
+    },
+    minus: function minus() {
+        m.update({ n: m.data.n - 1 });
+    },
+    mul: function mul() {
+        m.update({ n: m.data.n * 2 });
+    },
+    div: function div() {
+        m.update({ n: m.data.n / 2 });
+    },
+    autoBindEvents: function autoBindEvents() {
+        for (var key in view.events) {
+            var value = view[view.events[key]];
+            // 得到空格的位置
+            var spaceIndex = key.indexOf(' ');
+            var part1 = key.slice(0, spaceIndex);
+            var part2 = key.slice(spaceIndex + 1);
+            view.el.on(part1, part2, value);
+        }
+    }
+};
 
-$button4.on("click", function () {
-  var n = parseInt($number.text());
-  n /= 2;
-  localStorage.setItem("n", n);
-  $number.text(n);
-});
-},{"./app1.css":"app1.css","jquery":"..\\node_modules\\jquery\\dist\\jquery.js"}],"app2.css":[function(require,module,exports) {
+// 第一次渲染 html
+exports.default = view;
+},{"./app1.css":"app1.css","jquery":"..\\node_modules\\jquery\\dist\\jquery.js","./base/Model.js":"base\\Model.js"}],"app2.css":[function(require,module,exports) {
 
 var reloadCSS = require('_css_loader');
 module.hot.dispose(reloadCSS);
@@ -11306,26 +11396,77 @@ module.hot.accept(reloadCSS);
 },{"_css_loader":"C:\\Users\\kakms\\AppData\\Local\\Yarn\\Data\\global\\node_modules\\parcel\\src\\builtins\\css-loader.js"}],"app2.js":[function(require,module,exports) {
 "use strict";
 
+Object.defineProperty(exports, "__esModule", {
+    value: true
+});
+
 require("./app2.css");
 
 var _jquery = require("jquery");
 
 var _jquery2 = _interopRequireDefault(_jquery);
 
+var _Model = require("./base/Model");
+
+var _Model2 = _interopRequireDefault(_Model);
+
 function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
 
-var $tabBar = (0, _jquery2.default)("#app2 .tab-bar");
-var $tabContent = (0, _jquery2.default)("#app2 .tab-content");
+var eventBus = (0, _jquery2.default)({});
 
-$tabBar.on("click", "li", function (e) {
-  var $li = (0, _jquery2.default)(e.currentTarget);
-  $li.addClass("selected").siblings().removeClass("selected");
-  var index = $li.index();
-  $tabContent.children().eq(index).addClass("active").siblings().removeClass("active");
+var localKey = "app2.index";
+var m = new _Model2.default({
+    data: {
+        index: parseInt(localStorage.getItem(localKey)) || 0
+    },
+    update: function update(data) {
+        Object.assign(m.data, data);
+        eventBus.trigger('m:updated');
+        localStorage.setItem(localKey, data.index);
+    }
 });
 
-$tabBar.children().eq(0).trigger("click");
-},{"./app2.css":"app2.css","jquery":"..\\node_modules\\jquery\\dist\\jquery.js"}],"app3.css":[function(require,module,exports) {
+var view = {
+    el: null,
+    html: function html(index) {
+        return "\n      <div>\n        <ol class=\"tab-bar\">\n          <li class=\"" + (index === 0 ? 'selected' : '') + "\" data-index='0'>1</li>\n          <li class=\"" + (index === 1 ? 'selected' : '') + "\" data-index='1'>2</li>\n        </ol>\n        <ol class=\"tab-content\">\n          <li class=\"" + (index === 0 ? 'active' : '') + "\">\u5185\u5BB91</li>\n          <li class=\"" + (index === 1 ? 'active' : '') + "\">\u5185\u5BB92</li>\n        </ol>\n      </div>";
+    },
+    render: function render(index) {
+        if (view.el.children.length !== 0) {
+            view.el.empty();
+        }
+        (0, _jquery2.default)(view.html(index)).appendTo(view.el);
+    },
+    init: function init(container) {
+        view.el = (0, _jquery2.default)(container);
+        view.render(m.data.index); // view = render(data)
+        view.autoBindEvents();
+        eventBus.on('m:updated', function () {
+            view.render(m.data.index);
+        });
+    },
+
+    events: {
+        'click .tab-bar li': 'x'
+    },
+    x: function x(e) {
+        var index = parseInt(e.currentTarget.dataset.index);
+        m.update({ index: index });
+    },
+    autoBindEvents: function autoBindEvents() {
+        for (var key in view.events) {
+            var value = view[view.events[key]];
+            // 得到空格的位置
+            var spaceIndex = key.indexOf(' ');
+            var part1 = key.slice(0, spaceIndex);
+            var part2 = key.slice(spaceIndex + 1);
+            view.el.on(part1, part2, value);
+        }
+    }
+};
+
+exports.default = view;
+},{"./app2.css":"app2.css","jquery":"..\\node_modules\\jquery\\dist\\jquery.js","./base/Model":"base\\Model.js"}],"app3.css":[function(require,module,exports) {
 
 var reloadCSS = require('_css_loader');
 module.hot.dispose(reloadCSS);
@@ -11341,10 +11482,26 @@ var _jquery2 = _interopRequireDefault(_jquery);
 
 function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
 
+var html = "\n      <section id=\"app3\">\n        <div class=\"square\"></div>\n      </section>\n";
+
+var element = (0, _jquery2.default)(html).appendTo((0, _jquery2.default)('body > .page'));
+
 var $square = (0, _jquery2.default)("#app3 .square");
+var localKey = "app3.active";
+// yes no undefined
+var active = localStorage.getItem(localKey) === "yes";
+
+// $.toggleClass 如果没有就加上，如果有就去除
+$square.toggleClass("active", active);
+
 $square.on("click", function () {
-  // $.toggleClass 如果没有就加上，如果有就去除
-  $square.toggleClass("active");
+    if ($square.hasClass("active")) {
+        $square.removeClass("active");
+        localStorage.setItem(localKey, "no");
+    } else {
+        $square.addClass("active");
+        localStorage.setItem(localKey, "yes");
+    }
 });
 },{"./app3.css":"app3.css","jquery":"..\\node_modules\\jquery\\dist\\jquery.js"}],"app4.css":[function(require,module,exports) {
 
@@ -11362,12 +11519,16 @@ var _jquery2 = _interopRequireDefault(_jquery);
 
 function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
 
+var html = "\n      <section id=\"app4\">\n        <div class=\"circle\"></div>\n      </section>\n";
+
+var element = (0, _jquery2.default)(html).appendTo((0, _jquery2.default)('body > .page'));
+
 var $circle = (0, _jquery2.default)("#app4 .circle");
 
 $circle.on("mouseenter", function () {
-  $circle.addClass("active");
+    $circle.addClass("active");
 }).on("mouseleave", function () {
-  $circle.removeClass("active");
+    $circle.removeClass("active");
 });
 },{"./app4.css":"app4.css","jquery":"..\\node_modules\\jquery\\dist\\jquery.js"}],"main.js":[function(require,module,exports) {
 "use strict";
@@ -11376,13 +11537,22 @@ require("./reset.css");
 
 require("./global.css");
 
-require("./app1.js");
+var _app = require("./app1.js");
 
-require("./app2.js");
+var _app2 = _interopRequireDefault(_app);
+
+var _app3 = require("./app2.js");
+
+var _app4 = _interopRequireDefault(_app3);
 
 require("./app3.js");
 
 require("./app4.js");
+
+function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
+
+_app2.default.init('#app1');
+_app4.default.init('#app2');
 },{"./reset.css":"reset.css","./global.css":"global.css","./app1.js":"app1.js","./app2.js":"app2.js","./app3.js":"app3.js","./app4.js":"app4.js"}],"C:\\Users\\kakms\\AppData\\Local\\Yarn\\Data\\global\\node_modules\\parcel\\src\\builtins\\hmr-runtime.js":[function(require,module,exports) {
 var global = arguments[3];
 var OVERLAY_ID = '__parcel__error__overlay__';
@@ -11412,7 +11582,7 @@ var parent = module.bundle.parent;
 if ((!parent || !parent.isParcelRequire) && typeof WebSocket !== 'undefined') {
   var hostname = '' || location.hostname;
   var protocol = location.protocol === 'https:' ? 'wss' : 'ws';
-  var ws = new WebSocket(protocol + '://' + hostname + ':' + '53523' + '/');
+  var ws = new WebSocket(protocol + '://' + hostname + ':' + '49448' + '/');
   ws.onmessage = function (event) {
     var data = JSON.parse(event.data);
 
